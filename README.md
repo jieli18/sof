@@ -1,4 +1,4 @@
-# Landscape of SOF
+# SOF
 
 This folder contains the Python scripts for reproducing the experiments in our paper. 
 
