@@ -174,21 +174,19 @@ class Train:
     def plot_policy(self, save_file, ylim, loc):
         fig1 = plt.figure(1, figsize=self.figure_size)
         ax11 = fig1.add_subplot(111)
-        if self.num_method <= 4:
-            for m in range(self.num_method):
-                plt.plot(self.policy_index, self.policy_accuracy[m, 0, :],
-                         c=self.method_color[m], linewidth=size_line, label=self.method_name[m])
-        else:
-            for m in range(4):
-                plt.plot(self.policy_index, self.policy_accuracy[m, 0, :],
-                         c=self.method_color[m], linewidth=size_line, label=self.method_name[m])
-            for m in range(4, self.num_method):
-                plt.fill_between(self.policy_index[:, 0].tolist(),
-                                 np.min(self.policy_accuracy[m, :, :], 0).tolist(),
-                                 np.max(self.policy_accuracy[m, :, :], 0).tolist(),
-                                 facecolor=self.method_color[m], alpha=size_alpha)
-                plt.plot(self.policy_index, np.mean(self.policy_accuracy[m, :, :], 0),
-                         c=self.method_color[m], linewidth=size_line, label=self.method_name[m])
+        for m in range(3):
+            plt.plot(self.policy_index, self.policy_accuracy[m, 0, :],
+                     c=self.method_color[m], linewidth=size_line, label=self.method_name[m])
+        for m in range(3, 5):
+            plt.fill_between(self.policy_index[:, 0].tolist(),
+                             np.min(self.policy_accuracy[m, :, :], 0).tolist(),
+                             np.max(self.policy_accuracy[m, :, :], 0).tolist(),
+                             facecolor=self.method_color[m], alpha=size_alpha)
+            plt.plot(self.policy_index, np.mean(self.policy_accuracy[m, :, :], 0),
+                     c=self.method_color[m], linewidth=size_line, label=self.method_name[m])
+        m = 5
+        plt.plot(self.policy_index, self.policy_accuracy[m, 0, :],
+                 c=self.method_color[m], linewidth=size_line, label=self.method_name[m])
         # legend
         plt.legend(loc=loc, prop=font_legend)
         # coordinate
@@ -210,21 +208,19 @@ class Train:
     def plot_cost(self, save_file, ylim, loc):
         fig2 = plt.figure(2, figsize=self.figure_size)
         ax21 = fig2.add_subplot(111)
-        if self.num_method <= 4:
-            for m in range(self.num_method):
-                plt.plot(self.policy_index, self.cost_accuracy[m, 0, :],
-                         c=self.method_color[m], linewidth=size_line, label=self.method_name[m])
-        else:
-            for m in range(4):
-                plt.plot(self.policy_index, self.cost_accuracy[m, 0, :],
-                         c=self.method_color[m], linewidth=size_line, label=self.method_name[m])
-            for m in range(4, self.num_method):
-                plt.fill_between(self.policy_index[:, 0].tolist(),
-                                 np.min(self.cost_accuracy[m, :, :], 0).tolist(),
-                                 np.max(self.cost_accuracy[m, :, :], 0).tolist(),
-                                 facecolor=self.method_color[m], alpha=size_alpha)
-                plt.plot(self.policy_index, np.mean(self.cost_accuracy[m, :, :], 0),
-                         c=self.method_color[m], linewidth=size_line, label=self.method_name[m])
+        for m in range(3):
+            plt.plot(self.policy_index, self.cost_accuracy[m, 0, :],
+                     c=self.method_color[m], linewidth=size_line, label=self.method_name[m])
+        for m in range(3, 5):
+            plt.fill_between(self.policy_index[:, 0].tolist(),
+                             np.min(self.cost_accuracy[m, :, :], 0).tolist(),
+                             np.max(self.cost_accuracy[m, :, :], 0).tolist(),
+                             facecolor=self.method_color[m], alpha=size_alpha)
+            plt.plot(self.policy_index, np.mean(self.cost_accuracy[m, :, :], 0),
+                     c=self.method_color[m], linewidth=size_line, label=self.method_name[m])
+        m = 5
+        plt.plot(self.policy_index, self.cost_accuracy[m, 0, :],
+                 c=self.method_color[m], linewidth=size_line, label=self.method_name[m])
         # legend
         plt.legend(loc=loc, prop=font_legend)
         # coordinate
@@ -247,21 +243,19 @@ class Train:
         fig3 = plt.figure(3, figsize=self.figure_size)
         ax31 = fig3.add_subplot(111)
         index = np.arange(int(self.num_iteration / self.num_record))
-        if self.num_method <= 4:
-            for m in range(self.num_method):
-                plt.plot(index, self.gradient_norm[m, 0, :],
-                         c=self.method_color[m], linewidth=size_line, label=self.method_name[m])
-        else:
-            for m in range(4):
-                plt.plot(index, self.gradient_norm[m, 0, :],
-                         c=self.method_color[m], linewidth=size_line, label=self.method_name[m])
-            for m in range(4, self.num_method):
-                plt.fill_between(index.tolist(),
-                                 np.min(self.gradient_norm[m, :, :], 0).tolist(),
-                                 np.max(self.gradient_norm[m, :, :], 0).tolist(),
-                                 facecolor=self.method_color[m], alpha=size_alpha)
-                plt.plot(index, np.mean(self.gradient_norm[m, :, :], 0),
-                         c=self.method_color[m], linewidth=size_line, label=self.method_name[m])
+        for m in range(3):
+            plt.plot(index, self.gradient_norm[m, 0, :],
+                     c=self.method_color[m], linewidth=size_line, label=self.method_name[m])
+        for m in range(3, 5):
+            plt.fill_between(index.tolist(),
+                             np.min(self.gradient_norm[m, :, :], 0).tolist(),
+                             np.max(self.gradient_norm[m, :, :], 0).tolist(),
+                             facecolor=self.method_color[m], alpha=size_alpha)
+            plt.plot(index, np.mean(self.gradient_norm[m, :, :], 0),
+                     c=self.method_color[m], linewidth=size_line, label=self.method_name[m])
+        m = 5
+        plt.plot(index, self.gradient_norm[m, 0, :],
+                 c=self.method_color[m], linewidth=size_line, label=self.method_name[m])
         # legend
         plt.legend(loc=loc, prop=font_legend)
         # coordinate
