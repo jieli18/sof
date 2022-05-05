@@ -14,7 +14,7 @@ import os
 import matplotlib.pyplot as plt
 os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 policy_learning_rate_constant = [1, 1, 1, 1, 1, 1]
-policy_learning_rate_variable = [1e-1, 10, 50, 1e-1, 36, 175]
+policy_learning_rate_variable = [10, 50, 1e-1, 36, 175, 1e-1]
 
 
 def main():
@@ -25,13 +25,12 @@ def main():
     parser.add_argument('--num_method', type=int, default=6, help='6')
     parser.add_argument('--max_run', type=int, default=10, help='10')
     parser.add_argument('--num_run', type=list,
-                        default=[1, 1, 1, 1, parser.parse_args().max_run, parser.parse_args().max_run])
+                        default=[1, 1, 1, parser.parse_args().max_run, parser.parse_args().max_run, 1])
     parser.add_argument('--method_name', type=dict,
-                        default={0: 'Equivalent-SOFLQR',
-                                 1: 'Vanilla Gradient', 2: 'Natural Gradient', 3: 'Gauss-Newton',
-                                 4: 'Model-free Vanilla', 5: 'Model-free Natural'})
+                        default={0: 'Vanilla Gradient', 1: 'Natural Gradient', 2: 'Gauss-Newton',
+                                 3: 'Model-free Vanilla', 4: 'Model-free Natural', 5: 'method in [46]'})
     parser.add_argument('--method_color', type=dict,
-                        default={0: 'black', 1: '#4169E1', 2: '#9932CC', 3: '#FF8000', 4: 'r', 5: '#32CD32'})
+                        default={0: '#4169E1', 1: '#9932CC', 2: '#FF8000', 3: 'r', 4: '#32CD32', 5: 'black'})
 
     # 1. Parameters for environment
     parser.add_argument('--env_name', type=str, default='Circuit')
@@ -43,7 +42,7 @@ def main():
 
     # 2. Parameters for algorithm
     parser.add_argument('--ite', type=int, default=1)
-    parser.add_argument('--num_iteration', type=int, default=300, help='100')
+    parser.add_argument('--num_iteration', type=int, default=300, help='300')
     parser.add_argument('--normalized', type=bool, default=False)
     parser.add_argument('--power_schedule_normalized', type=bool, default=False)
     parser.add_argument('--norm_gradient_constant', type=float, default=1e-1)
@@ -51,8 +50,8 @@ def main():
 
     # 3. Parameters for trainer
     # Parameters for sampler
-    parser.add_argument('--num_agent', type=int, default=128, help='64')
-    parser.add_argument('--num_policy', type=int, default=128, help='100')
+    parser.add_argument('--num_agent', type=int, default=128, help='128')
+    parser.add_argument('--num_policy', type=int, default=128, help='128')
     parser.add_argument('--num_step', type=int, default=50, help='50')
     parser.add_argument('--norm_policy_noise', type=float, default=1e-3)
     # Data savings
@@ -123,13 +122,7 @@ def main():
 
             for i in range(args['num_iteration']):
 
-                if args['method_name'][m] == 'Equivalent-SOFLQR':
-                    E = train.equivalent_of_lqr(Ki)
-                    norm_E = torch.norm(E)
-                    train.gradient_norm[m, r, i] = norm_E
-                    Ki = Ki + scaling_factor * E * scalar_gradient(norm_gradient(i+1) / norm_E)
-                    policy = torch.mm(Ki, env.C_pseudo_inv)
-                elif args['method_name'][m] == 'Vanilla Gradient':
+                if args['method_name'][m] == 'Vanilla Gradient':
                     Delta_J_K = train.gradient_descent(policy)
                     norm_Delta_J_K = torch.norm(Delta_J_K)
                     train.gradient_norm[m, r, i] = norm_Delta_J_K
@@ -154,6 +147,12 @@ def main():
                     norm_estimated_Delta_NA = torch.norm(estimated_Delta_NA)
                     train.gradient_norm[m, r, i] = norm_estimated_Delta_NA
                     policy = policy - lr_policy[m] * estimated_Delta_NA * scalar_gradient(norm_gradient(i+1) / norm_estimated_Delta_NA)
+                elif args['method_name'][m] == 'method in [46]':
+                    E = train.equivalent_of_lqr(Ki)
+                    norm_E = torch.norm(E)
+                    train.gradient_norm[m, r, i] = norm_E
+                    Ki = Ki + scaling_factor * E * scalar_gradient(norm_gradient(i+1) / norm_E)
+                    policy = torch.mm(Ki, env.C_pseudo_inv)
                 else:
                     print('method name error!')
                     exit()
@@ -162,7 +161,7 @@ def main():
                 # print(f'ite: {i}, maximum eigenvalue of A - B * Fi * C: '
                 #       f'{max(torch.abs(torch.linalg.eigvals(env.A - env.B @ policy @ env.C))).item():.4f}')
 
-                if args['method_name'][m] == 'Equivalent-SOFLQR':
+                if args['method_name'][m] == 'method in [46]':
                     cost = env.obj_func(Ki)  # J(K_i) = J(F_i * C)
                 else:
                     cost = env.obj_func(torch.mm(policy, env.C))  # J(K_i) = J(F_i * C)
