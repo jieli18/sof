@@ -78,7 +78,7 @@ def main():
 
     args['policy_learning_rate'] = policy_learning_rate_constant if normalized else policy_learning_rate_variable
     lr_policy = args['policy_learning_rate']
-    scaling_factor = lr_policy[0]
+    scaling_factor = lr_policy[5]
 
     def scalar_gradient(scale):
         return scale if normalized else 1
