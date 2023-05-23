@@ -1,5 +1,5 @@
 from __future__ import print_function
-from dynamics import DynamicsConfig, Circuit
+from dynamics import DynamicsConfig, Doyle
 from train import Train
 from tensorboardX import SummaryWriter
 
@@ -13,8 +13,8 @@ import datetime
 import os
 import matplotlib.pyplot as plt
 os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
-policy_learning_rate_constant = [1, 1, 1, 1, 1, 1]
-policy_learning_rate_variable = [10, 50, 1e-1, 36, 175, 1e-1]
+policy_learning_rate_constant = [2e-1, 2e-1, 2e-1, 2e-1, 2e-1, 2e-1]
+policy_learning_rate_variable = [2e-1, 2e-1, 2e-1, 2e-1, 2e-1, 2e-1]
 
 
 def main():
@@ -33,19 +33,19 @@ def main():
                         default={0: '#4169E1', 1: '#9932CC', 2: '#FF8000', 3: 'r', 4: '#32CD32', 5: 'black'})
 
     # 1. Parameters for environment
-    parser.add_argument('--env_name', type=str, default='Circuit')
-    parser.add_argument('--num_state', type=int, default=4, help='')
-    parser.add_argument('--num_observation', type=int, default=2, help='')
-    parser.add_argument('--num_control', type=int, default=2, help='')
+    parser.add_argument('--env_name', type=str, default='Doyle')
+    parser.add_argument('--num_state', type=int, default=2, help='')
+    parser.add_argument('--num_observation', type=int, default=1, help='')
+    parser.add_argument('--num_control', type=int, default=1, help='')
     parser.add_argument('--opt_policy', type=torch.tensor, default=None)
     parser.add_argument('--init_policy', type=torch.tensor, default=None)
 
     # 2. Parameters for algorithm
     parser.add_argument('--ite', type=int, default=1)
-    parser.add_argument('--num_iteration', type=int, default=300, help='300')
+    parser.add_argument('--num_iteration', type=int, default=100, help='100')
     parser.add_argument('--normalized', type=bool, default=False)
     parser.add_argument('--power_schedule_normalized', type=bool, default=False)
-    parser.add_argument('--norm_gradient_constant', type=float, default=1e-1)
+    parser.add_argument('--norm_gradient_constant', type=float, default=2e-1)
     parser.add_argument('--policy_learning_rate', type=list, default=None)
 
     # 3. Parameters for trainer
@@ -66,7 +66,7 @@ def main():
     DynamicsConfig.num_step = args['num_step']
     DynamicsConfig.norm_policy_noise = args['norm_policy_noise']
 
-    env = Circuit()
+    env = Doyle()
     args['num_state'] = env.num_state
     args['num_observation'] = env.num_observation
     args['num_control'] = env.num_control
@@ -82,7 +82,7 @@ def main():
 
     def scalar_gradient(scale):
         return scale if normalized else 1
-    
+
     def norm_gradient(step):
         return 3 * step ** -0.978 if power_schedule_normalized else args['norm_gradient_constant']
 
@@ -97,7 +97,7 @@ def main():
     norm_opt_cost = torch.abs(opt_cost)  # | J(K_0) - J(K^*) | = | J(F_0 * C) - J(F^* * C) |
 
     train = Train(env, **args)
-    train.figure_size = 3.6, 2.7  # PPT
+    train.figure_size = 3.6, 3.2
 
     save_time = datetime.datetime.now().strftime("%Y-%m%d-%H%M")
     results_file = './results/' + save_time
@@ -126,32 +126,32 @@ def main():
                     Delta_J_K = train.gradient_descent(policy)
                     norm_Delta_J_K = torch.norm(Delta_J_K)
                     train.gradient_norm[m, r, i] = norm_Delta_J_K
-                    policy = policy - lr_policy[m] * Delta_J_K * scalar_gradient(norm_gradient(i+1) / norm_Delta_J_K)
+                    policy = policy - lr_policy[m] * Delta_J_K * scalar_gradient(norm_gradient(i + 1) / norm_Delta_J_K)
                 elif args['method_name'][m] == 'Natural Gradient':
                     Delta_NA = train.natural_policy_gradient(policy)
                     norm_Delta_NA = torch.norm(Delta_NA)
                     train.gradient_norm[m, r, i] = norm_Delta_NA
-                    policy = policy - lr_policy[m] * Delta_NA * scalar_gradient(norm_gradient(i+1) / norm_Delta_NA)
+                    policy = policy - lr_policy[m] * Delta_NA * scalar_gradient(norm_gradient(i + 1) / norm_Delta_NA)
                 elif args['method_name'][m] == 'Gauss-Newton':
                     Delta_GN = train.gauss_newton_policy_gradient(policy)
                     norm_Delta_GN = torch.norm(Delta_GN)
                     train.gradient_norm[m, r, i] = norm_Delta_GN
-                    policy = policy - lr_policy[m] * Delta_GN * scalar_gradient(norm_gradient(i+1) / norm_Delta_GN)
+                    policy = policy - lr_policy[m] * Delta_GN * scalar_gradient(norm_gradient(i + 1) / norm_Delta_GN)
                 elif args['method_name'][m] == 'Model-free Vanilla':
                     estimated_Delta_J_K = train.estimated_gradient_descent(policy)
                     norm_estimated_Delta_J_K = torch.norm(estimated_Delta_J_K)
                     train.gradient_norm[m, r, i] = norm_estimated_Delta_J_K
-                    policy = policy - lr_policy[m] * estimated_Delta_J_K * scalar_gradient(norm_gradient(i+1) / norm_estimated_Delta_J_K)
+                    policy = policy - lr_policy[m] * estimated_Delta_J_K * scalar_gradient(norm_gradient(i + 1) / norm_estimated_Delta_J_K)
                 elif args['method_name'][m] == 'Model-free Natural':
                     estimated_Delta_NA = train.estimated_natural_policy_gradient(policy)
                     norm_estimated_Delta_NA = torch.norm(estimated_Delta_NA)
                     train.gradient_norm[m, r, i] = norm_estimated_Delta_NA
-                    policy = policy - lr_policy[m] * estimated_Delta_NA * scalar_gradient(norm_gradient(i+1) / norm_estimated_Delta_NA)
+                    policy = policy - lr_policy[m] * estimated_Delta_NA * scalar_gradient(norm_gradient(i + 1) / norm_estimated_Delta_NA)
                 elif args['method_name'][m] == 'method in [46]':
                     E = train.equivalent_of_lqr(Ki)
                     norm_E = torch.norm(E)
                     train.gradient_norm[m, r, i] = norm_E
-                    Ki = Ki + scaling_factor * E * scalar_gradient(norm_gradient(i+1) / norm_E)
+                    Ki = Ki + scaling_factor * E * scalar_gradient(norm_gradient(i + 1) / norm_E)
                     policy = torch.mm(Ki, env.C_pseudo_inv)
                 else:
                     print('method name error!')
@@ -193,9 +193,9 @@ def main():
         json.dump(change_type(copy.deepcopy(args)), f, ensure_ascii=False, indent=4)
     train.save_policy(save_file)
     train.save_gradient_norm(save_file)
-    fig1 = train.plot_policy(save_file, ylim=(0.5e-3, 2e0), loc='upper right')
-    fig2 = train.plot_cost(save_file, ylim=(0.9e-7, 2e0), loc='upper right')
-    fig3 = train.plot_gradient_norm(save_file, ylim=(0.9e-5, 2e2), loc='upper right')
+    fig1 = train.plot_policy(save_file, ylim=(0.9e-11, 5e0), loc='lower left')
+    fig2 = train.plot_cost(save_file, ylim=(0.9e-11, 5e0), loc='upper right')
+    fig3 = train.plot_gradient_norm(save_file, ylim=(0.7e-5, 2e0), loc='upper right')
     plt.show()
 
     writer.add_figure('policy error', fig1, close=False)
