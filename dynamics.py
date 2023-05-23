@@ -167,6 +167,160 @@ class DynamicsModel(DynamicsConfig):
         return Sigma_K
 
 
+class Doyle(DynamicsConfig):
+
+    def __init__(self):
+
+        super(Doyle, self).__init__()
+        # dimension of state, control and disturbance
+        self.num_state = 2
+        self.num_observation = 1
+        self.num_control = 1
+
+        # parameters of discrete dynamics
+        self.A = torch.tensor([[1.1, 0.1],
+                               [0.0,  1.1]], dtype=torch.float64)
+        self.B = torch.tensor([[0], [0.1]], dtype=torch.float64)
+        self.C = torch.tensor([[1, 0]], dtype=torch.float64)
+
+        # perform singular value decomposition on the output matrix C
+        self.U, self.Y_d, self.VT = torch.linalg.svd(self.C)
+        self.Y = torch.cat((torch.diag_embed(self.Y_d), torch.zeros(self.num_observation, self.num_state - self.num_observation)), dim=1)
+        self.V = self.VT.t()
+        print(f'error of svd: {torch.norm(self.C - torch.mm(torch.mm(self.U, self.Y), self.V.t())):.2f}')
+        print(f'error of I: {torch.norm(torch.eye(self.num_state) - torch.mm(self.V, self.V.t())):.2f}, '
+              f'{torch.norm(torch.eye(self.num_state) - torch.mm(self.V.t(), self.V)):.2f}, '
+              f'{torch.norm(torch.eye(self.num_observation) - torch.mm(self.U, self.U.t())):.2f}, '
+              f'{torch.norm(torch.eye(self.num_observation) - torch.mm(self.U.t(), self.U)):.2f}')
+
+        # partition the unitary matrix V and the singular value matrix S
+        self.V1 = self.V[:, 0:self.num_observation]
+        self.V2 = self.V[:, self.num_observation:self.num_state]
+        self.S1 = self.Y[:, 0:self.num_observation]
+        self.C_pseudo_inv = torch.mm(torch.mm(self.V1, torch.inverse(self.S1)), self.U.t())
+        print(f'error of partition: '
+              f'{torch.norm(self.C - torch.mm(torch.mm(self.U, self.S1), self.V1.t())):.2f}, '
+              f'{torch.norm(torch.mm(self.C_pseudo_inv, self.C) - torch.mm(self.V1, self.V1.t())):.2f}, '
+              f'{torch.norm(torch.mm(self.V2.t(), self.V1)):.2f}, '
+              f'{torch.norm(torch.eye(self.num_state) - torch.mm(self.V1, self.V1.t()) - torch.mm(self.V2, self.V2.t())):.2f}')
+
+        # weighting matrices of utility function
+        self.Q = torch.tensor([[5., 5.], [5., 5.]], dtype=torch.float64)
+        self.R = torch.tensor([[1.0]], dtype=torch.float64)
+        self.X = torch.eye(self.num_state, dtype=torch.float64)
+        self.I_num_state = torch.eye(self.num_state, dtype=torch.float64)
+        self.Sigma = torch.tensor([[1., 0.], [0., 1.]], dtype=torch.float64)
+
+        # the optimal parameter of networks
+        self.opt_policy = torch.tensor([[-0.421075078617755]], dtype=torch.float64)
+        self.init_policy = torch.tensor([[0.0]], dtype=torch.float64)
+        self.K0 = torch.mm(self.init_policy, self.C)
+
+    def random_initialize(self):
+
+        distribution = MultivariateNormal(torch.zeros(self.num_state), torch.eye(self.num_state))
+        state = distribution.sample(sample_shape=torch.Size([self.num_agent])).double()  # torch.Size([1, 2])
+
+        return state
+
+    def policy_noise(self):
+
+        theta = torch.rand(1, )
+        U = torch.zeros_like(self.init_policy, dtype=torch.float64)
+
+        if theta <= 0.5:
+            U[0, 0] = -1.0
+        else:
+            U[0, 0] = 1.0
+
+        return U
+
+    def rollout_n_step(self, initial_state, F_hat):
+
+        accumulated_cost = torch.zeros([self.num_agent, 1], dtype=torch.float64)
+        accumulated_corr = torch.zeros([self.num_agent, self.num_observation, self.num_observation], dtype=torch.float64)
+
+        state = initial_state  # torch.Size([batch_size, 4])
+        for i in range(self.num_step):
+            observation = torch.mm(state, self.C.t())    # torch.Size([batch_size, 1])
+            control = -torch.mm(observation, F_hat.t())  # torch.Size([batch_size, 1])
+            state_next = torch.mm(state, self.A.t()) + torch.mm(control, self.B.t())  # torch.Size([batch_size, 2])
+
+            cost = self.cost_func(state, control)
+            correlation = torch.bmm(observation[:, :, np.newaxis], observation[:, np.newaxis, :])
+
+            accumulated_cost += cost         # torch.Size([batch_size, 1])
+            accumulated_corr += correlation  # torch.Size([batch_size, 1, 1])
+            state = state_next
+
+        return accumulated_cost, accumulated_corr
+
+    def cost_func(self, state, control):
+
+        cost = torch.bmm(torch.mm(state, self.Q)[:, np.newaxis, :], state[:, :, np.newaxis]).squeeze(-1) \
+               + torch.bmm(torch.mm(control, self.R)[:, np.newaxis, :], control[:, :, np.newaxis]).squeeze(-1)
+
+        return cost
+
+    @staticmethod
+    def dlyap(A, Q):
+        """
+        A X A ^ T - X + Q = 0
+        X = dlyap(A, Q)
+        """
+        assert max(torch.abs(torch.linalg.eigvals(A))).item() < 1.0, 'unstable closed-loop dynamic system'
+        Ar = A.t()
+        a1 = Ar[0, 0]
+        a2 = Ar[0, 1]
+        a3 = Ar[1, 0]
+        a4 = Ar[1, 1]
+
+        M = torch.tensor([[a1**2 - 1, 2 * a1 * a3, a3**2],
+                          [a1 * a2, a1 * a4 + a2 * a3 - 1, a3 * a4],
+                          [a2**2, 2 * a2 * a4, a4**2 - 1]], dtype=torch.float64)
+        N = torch.tensor([[Q[0, 0].item()], [Q[0, 1].item()], [Q[1, 1].item()]], dtype=torch.float64)
+        p = torch.mm(torch.inverse(M), -N)
+
+        X = torch.tensor([[0, 0], [0, 0]], dtype=torch.float64)
+        X[0, 0] = p[0, 0]
+        X[0, 1] = p[1, 0]
+        X[1, 0] = p[1, 0]
+        X[1, 1] = p[2, 0]
+        return X
+
+    def lyap(self, K):
+        """
+        (A - B K)^T P_K (A - B K) - P_K + Q + K^T R K = 0, or
+        (A - B F C)^T P_K (A - B F C) - P_K + Q + C^T F^T R F C = 0
+        :param K: F * C, where F is the output feedback gain
+        :return: the solution of Lyapunov Equation
+        """
+        Ar = self.A - torch.mm(self.B, K)
+        P_K = self.dlyap(Ar.t(), self.Q + torch.mm(torch.mm(K.t(), self.R), K))
+        return P_K
+
+    def obj_func(self, K):
+        """
+        J(K) = Tr(P_K X_0) = Tr(P_K Sigma)
+        :param K: F * C, where F is the output feedback gain
+        :return: the objective function of F * C
+        """
+        P_K = self.lyap(K)
+        J_K = torch.mm(P_K, self.Sigma).trace()
+        return J_K
+
+    def state_correlation(self, K):
+        """
+        (A - B K) Sigma_K (A - B K)^T - Sigma_K + I = 0, or
+        (A - B F C) Sigma_K (A - B F C)^T - Sigma_K + I = 0
+        :param K: F * C, where F is the output feedback gain
+        :return: the solution
+        """
+        Ar = self.A - torch.mm(self.B, K)
+        Sigma_K = self.dlyap(Ar, torch.eye(self.num_state, dtype=torch.float64))
+        return Sigma_K
+
+
 class Circuit(DynamicsConfig):
 
     def __init__(self):
