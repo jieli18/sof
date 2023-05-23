@@ -22,8 +22,8 @@ def main():
     parser = argparse.ArgumentParser()
 
     # Key Parameters for users
-    parser.add_argument('--num_method', type=int, default=6, help='6')
-    parser.add_argument('--max_run', type=int, default=10, help='10')
+    parser.add_argument('--list_method', type=list, default=[0, 1, 2, 3, 4, 5], help='6')
+    parser.add_argument('--max_run', type=int, default=1, help='10')
     parser.add_argument('--num_run', type=list,
                         default=[1, 1, 1, parser.parse_args().max_run, parser.parse_args().max_run, 1])
     parser.add_argument('--method_name', type=dict,
@@ -105,7 +105,7 @@ def main():
     writer = SummaryWriter(results_file)
     args['save_folder'] = save_file
 
-    for m in range(args['num_method']):
+    for m in args['list_method']:
         for r in range(args['num_run'][m]):
             args['ite'] = 1
             train.policy_index[0] = 0
