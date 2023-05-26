@@ -13,8 +13,8 @@ import datetime
 import os
 import matplotlib.pyplot as plt
 os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
-policy_learning_rate_constant = [2e-1, 2e-1, 2e-1, 2e-1, 2e-1, 2e-1]
-policy_learning_rate_variable = [2e-1, 2e-1, 2e-1, 2e-1, 2e-1, 2e-1]
+policy_learning_rate_constant = [5e-2, 2e-1, 2e-1, 5e-2, 2e-1, 2e-1]
+policy_learning_rate_variable = [5e-2, 2e-1, 2e-1, 5e-2, 2e-1, 2e-1]
 
 
 def main():
@@ -22,7 +22,7 @@ def main():
     parser = argparse.ArgumentParser()
 
     # Key Parameters for users
-    parser.add_argument('--list_method', type=list, default=[0, 1, 2, 5], help='6')
+    parser.add_argument('--list_method', type=list, default=[0, 1, 2, 3, 4, 5], help='6')
     parser.add_argument('--max_run', type=int, default=10, help='10')
     parser.add_argument('--num_run', type=list,
                         default=[1, 1, 1, parser.parse_args().max_run, parser.parse_args().max_run, 1])
@@ -193,8 +193,8 @@ def main():
         json.dump(change_type(copy.deepcopy(args)), f, ensure_ascii=False, indent=4)
     train.save_policy(save_file)
     train.save_gradient_norm(save_file)
-    fig1 = train.plot_policy(save_file, ylim=(0.9e-11, 5e0), loc='lower left')
-    fig2 = train.plot_cost(save_file, ylim=(0.9e-11, 5e0), loc='upper right')
+    fig1 = train.plot_policy(save_file, ylim=(0.9e-11, 5e-1), loc='upper right')
+    fig2 = train.plot_cost(save_file, ylim=(0.9e-11, 1e-1), loc='upper right')
     fig3 = train.plot_gradient_norm(save_file, ylim=(0.7e-5, 2e0), loc='upper right')
     plt.show()
 

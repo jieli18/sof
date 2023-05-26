@@ -180,8 +180,8 @@ class Doyle(DynamicsConfig):
         # parameters of discrete dynamics
         self.A = torch.tensor([[1.1, 0.1],
                                [0.0, 1.1]], dtype=torch.float64)
-        self.B = torch.tensor([[0], [0.1]], dtype=torch.float64)
-        self.C = torch.tensor([[1, 0]], dtype=torch.float64)
+        self.B = torch.tensor([[0.0], [0.1]], dtype=torch.float64)
+        self.C = torch.tensor([[1.0, 1.0]], dtype=torch.float64)
 
         # perform singular value decomposition on the output matrix C
         self.U, self.Y_d, self.VT = torch.linalg.svd(self.C)
@@ -212,8 +212,8 @@ class Doyle(DynamicsConfig):
         self.Sigma = torch.tensor([[1., 0.], [0., 1.]], dtype=torch.float64)
 
         # the optimal parameter of networks
-        self.opt_policy = torch.tensor([[-0.421075078617755]], dtype=torch.float64)
-        self.init_policy = torch.tensor([[0.0]], dtype=torch.float64)
+        self.opt_policy = torch.tensor([[4.670022407193215]], dtype=torch.float64)
+        self.init_policy = torch.tensor([[5.0]], dtype=torch.float64)
         self.K0 = torch.mm(self.init_policy, self.C)
 
     def random_initialize(self):
