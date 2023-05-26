@@ -213,7 +213,7 @@ class Doyle(DynamicsConfig):
 
         # the optimal parameter of networks
         self.opt_policy = torch.tensor([[4.670022407193215]], dtype=torch.float64)
-        self.init_policy = torch.tensor([[5.0]], dtype=torch.float64)
+        self.init_policy = torch.tensor([[9.0]], dtype=torch.float64)
         self.K0 = torch.mm(self.init_policy, self.C)
 
     def random_initialize(self):

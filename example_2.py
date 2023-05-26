@@ -193,9 +193,9 @@ def main():
         json.dump(change_type(copy.deepcopy(args)), f, ensure_ascii=False, indent=4)
     train.save_policy(save_file)
     train.save_gradient_norm(save_file)
-    fig1 = train.plot_policy(save_file, ylim=(0.9e-11, 5e-1), loc='upper right')
-    fig2 = train.plot_cost(save_file, ylim=(0.9e-11, 1e-1), loc='upper right')
-    fig3 = train.plot_gradient_norm(save_file, ylim=(0.7e-5, 2e0), loc='upper right')
+    fig1 = train.plot_policy(save_file, ylim=(0.9e-11, 5e0), loc='lower right')
+    fig2 = train.plot_cost(save_file, ylim=(0.9e-11, 5e0), loc='lower right')
+    fig3 = train.plot_gradient_norm(save_file, ylim=(0.7e-5, 2e1), loc='lower right')
     plt.show()
 
     writer.add_figure('policy error', fig1, close=False)
