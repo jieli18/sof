@@ -22,7 +22,7 @@ def main():
     parser = argparse.ArgumentParser()
 
     # Key Parameters for users
-    parser.add_argument('--list_method', type=list, default=[0, 1, 2, 3, 4, 5], help='6')
+    parser.add_argument('--list_method', type=list, default=[0, 1, 2, 5], help='6')
     parser.add_argument('--max_run', type=int, default=10, help='10')
     parser.add_argument('--num_run', type=list,
                         default=[1, 1, 1, parser.parse_args().max_run, parser.parse_args().max_run, 1])
@@ -42,7 +42,7 @@ def main():
 
     # 2. Parameters for algorithm
     parser.add_argument('--ite', type=int, default=1)
-    parser.add_argument('--num_iteration', type=int, default=100, help='100')
+    parser.add_argument('--num_iteration', type=int, default=30, help='30')
     parser.add_argument('--normalized', type=bool, default=False)
     parser.add_argument('--power_schedule_normalized', type=bool, default=False)
     parser.add_argument('--norm_gradient_constant', type=float, default=2e-1)
