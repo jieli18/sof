@@ -52,7 +52,7 @@ def main():
     # Parameters for sampler
     parser.add_argument('--num_agent', type=int, default=128, help='128')
     parser.add_argument('--num_policy', type=int, default=128, help='128')
-    parser.add_argument('--num_step', type=int, default=50, help='50')
+    parser.add_argument('--num_step', type=int, default=500, help='50')
     parser.add_argument('--norm_policy_noise', type=float, default=1e-3)
     # Data savings
     parser.add_argument('--save_folder', type=str, default=None)
