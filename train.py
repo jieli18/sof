@@ -201,6 +201,8 @@ class Train:
         # save
         plt.savefig(save_file + 'policy_error_{:d}'.format(self.num_iteration) + '.svg',
                     format='svg', dpi=size_dpi, bbox_inches='tight')
+        plt.savefig(save_file + 'policy_error_{:d}'.format(self.num_iteration) + '.png',
+                    format='png', dpi=size_dpi, bbox_inches='tight')
 
         return fig1
 
@@ -233,6 +235,8 @@ class Train:
         # save
         plt.savefig(save_file + 'cost_error_{:d}'.format(self.num_iteration) + '.svg',
                     format='svg', dpi=size_dpi, bbox_inches='tight')
+        plt.savefig(save_file + 'cost_error_{:d}'.format(self.num_iteration) + '.png',
+                    format='png', dpi=size_dpi, bbox_inches='tight')
 
         return fig2
 
@@ -266,6 +270,8 @@ class Train:
         # save
         plt.savefig(save_file + 'gradient_norm_{:d}'.format(self.num_iteration) + '.svg',
                     format='svg', dpi=size_dpi, bbox_inches='tight')
+        plt.savefig(save_file + 'gradient_norm_{:d}'.format(self.num_iteration) + '.png',
+                    format='png', dpi=size_dpi, bbox_inches='tight')
 
         return fig3
 
