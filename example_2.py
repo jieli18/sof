@@ -13,8 +13,8 @@ import datetime
 import os
 import matplotlib.pyplot as plt
 os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
-policy_learning_rate_constant = [5e-2, 2e-1, 2e-1, 5e-2, 2e-1, 2e-1]
-policy_learning_rate_variable = [5e-2, 2e-1, 2e-1, 5e-2, 2e-1, 2e-1]
+policy_learning_rate_constant = [2e-1, 2e-1, 2e-1, 2e-1, 2e-1, 2e-1]
+policy_learning_rate_variable = [2e-1, 2e-1, 2e-1, 2e-1, 2e-1, 2e-1]
 
 
 def main():
@@ -22,7 +22,7 @@ def main():
     parser = argparse.ArgumentParser()
 
     # Key Parameters for users
-    parser.add_argument('--list_method', type=list, default=[0, 1, 2, 3, 4, 5], help='6')
+    parser.add_argument('--list_method', type=list, default=[0, 1, 2, 3, 4], help='6')
     parser.add_argument('--max_run', type=int, default=10, help='10')
     parser.add_argument('--num_run', type=list,
                         default=[1, 1, 1, parser.parse_args().max_run, parser.parse_args().max_run, 1])
@@ -42,7 +42,7 @@ def main():
 
     # 2. Parameters for algorithm
     parser.add_argument('--ite', type=int, default=1)
-    parser.add_argument('--num_iteration', type=int, default=30, help='30')
+    parser.add_argument('--num_iteration', type=int, default=100, help='100')
     parser.add_argument('--normalized', type=bool, default=False)
     parser.add_argument('--power_schedule_normalized', type=bool, default=False)
     parser.add_argument('--norm_gradient_constant', type=float, default=2e-1)
@@ -52,7 +52,7 @@ def main():
     # Parameters for sampler
     parser.add_argument('--num_agent', type=int, default=128, help='128')
     parser.add_argument('--num_policy', type=int, default=128, help='128')
-    parser.add_argument('--num_step', type=int, default=500, help='50')
+    parser.add_argument('--num_step', type=int, default=100, help='100')
     parser.add_argument('--norm_policy_noise', type=float, default=1e-3)
     # Data savings
     parser.add_argument('--save_folder', type=str, default=None)

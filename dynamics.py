@@ -53,7 +53,6 @@ class DynamicsModel(DynamicsConfig):
         self.Q_y = torch.tensor([[1.]], dtype=torch.float64)
         self.Q = torch.mm(torch.mm(self.C.t(), self.Q_y), self.C)
         self.R = torch.tensor([[0.2]], dtype=torch.float64)
-        self.X = torch.eye(self.num_state, dtype=torch.float64)
         self.I_num_state = torch.eye(self.num_state, dtype=torch.float64)
         self.Sigma = torch.tensor([[1., 0.], [0., 1.]], dtype=torch.float64)
 
@@ -64,7 +63,7 @@ class DynamicsModel(DynamicsConfig):
 
     def random_initialize(self):
 
-        distribution = MultivariateNormal(torch.zeros(self.num_state), torch.eye(self.num_state))
+        distribution = MultivariateNormal(torch.zeros(self.num_state), self.Sigma.float())
         state = distribution.sample(sample_shape=torch.Size([self.num_agent])).double()  # torch.Size([1, 2])
 
         return state
@@ -163,7 +162,7 @@ class DynamicsModel(DynamicsConfig):
         :return: the solution
         """
         Ar = self.A - torch.mm(self.B, K)
-        Sigma_K = self.dlyap(Ar, torch.eye(self.num_state, dtype=torch.float64))
+        Sigma_K = self.dlyap(Ar, self.Sigma)
         return Sigma_K
 
 
@@ -205,20 +204,19 @@ class Doyle(DynamicsConfig):
               f'{torch.norm(torch.eye(self.num_state) - torch.mm(self.V1, self.V1.t()) - torch.mm(self.V2, self.V2.t())):.2f}')
 
         # weighting matrices of utility function
-        self.Q = torch.tensor([[5., 5.], [5., 5.]], dtype=torch.float64)
-        self.R = torch.tensor([[1.0]], dtype=torch.float64)
-        self.X = torch.eye(self.num_state, dtype=torch.float64)
+        self.Q = torch.tensor([[0.25, 0.], [0., 0.25]], dtype=torch.float64)
+        self.R = torch.tensor([[0.2]], dtype=torch.float64)
         self.I_num_state = torch.eye(self.num_state, dtype=torch.float64)
-        self.Sigma = torch.tensor([[1., 0.], [0., 1.]], dtype=torch.float64)
+        self.Sigma = 0.1 * torch.eye(self.num_state, dtype=torch.float64)
 
         # the optimal parameter of networks
-        self.opt_policy = torch.tensor([[4.670022407193215]], dtype=torch.float64)
+        self.opt_policy = torch.tensor([[4.0637499328125060]], dtype=torch.float64)
         self.init_policy = torch.tensor([[9.0]], dtype=torch.float64)
         self.K0 = torch.mm(self.init_policy, self.C)
 
     def random_initialize(self):
 
-        distribution = MultivariateNormal(torch.zeros(self.num_state), torch.eye(self.num_state))
+        distribution = MultivariateNormal(torch.zeros(self.num_state), self.Sigma.float())
         state = distribution.sample(sample_shape=torch.Size([self.num_agent])).double()  # torch.Size([1, 2])
 
         return state
@@ -317,7 +315,7 @@ class Doyle(DynamicsConfig):
         :return: the solution
         """
         Ar = self.A - torch.mm(self.B, K)
-        Sigma_K = self.dlyap(Ar, torch.eye(self.num_state, dtype=torch.float64))
+        Sigma_K = self.dlyap(Ar, self.Sigma)
         return Sigma_K
 
 
@@ -361,7 +359,6 @@ class Lqg(DynamicsConfig):
         # weighting matrices of utility function
         self.Q = torch.tensor([[5., 5.], [5., 5.]], dtype=torch.float64)
         self.R = torch.tensor([[1.0]], dtype=torch.float64)
-        self.X = torch.tensor([[0.2, 0.], [0., 0.8]], dtype=torch.float64)
         self.I_num_state = torch.eye(self.num_state, dtype=torch.float64)
         self.Sigma = torch.tensor([[0.2, 0.], [0., 0.8]], dtype=torch.float64)
 
@@ -372,7 +369,7 @@ class Lqg(DynamicsConfig):
 
     def random_initialize(self):
 
-        distribution = MultivariateNormal(torch.zeros(self.num_state), torch.eye(self.num_state))
+        distribution = MultivariateNormal(torch.zeros(self.num_state), self.Sigma.float())
         state = distribution.sample(sample_shape=torch.Size([self.num_agent])).double()  # torch.Size([1, 2])
 
         return state
@@ -471,7 +468,7 @@ class Lqg(DynamicsConfig):
         :return: the solution
         """
         Ar = self.A - torch.mm(self.B, K)
-        Sigma_K = self.dlyap(Ar, torch.eye(self.num_state, dtype=torch.float64))
+        Sigma_K = self.dlyap(Ar, self.Sigma)
         return Sigma_K
 
 
@@ -527,7 +524,6 @@ class Circuit(DynamicsConfig):
         self.R = torch.eye(self.num_control, dtype=torch.float64)
         self.R[0, 0] = 1e-6
         self.R[1, 1] = 1e-4
-        self.X = 10 * torch.eye(self.num_state, dtype=torch.float64)
         self.I_num_state = torch.eye(self.num_state, dtype=torch.float64)
         self.Sigma = torch.eye(self.num_state, dtype=torch.float64)
 
@@ -540,7 +536,7 @@ class Circuit(DynamicsConfig):
 
     def random_initialize(self):
 
-        distribution = MultivariateNormal(torch.zeros(self.num_state), torch.eye(self.num_state))
+        distribution = MultivariateNormal(torch.zeros(self.num_state), self.Sigma.float())
         state = distribution.sample(sample_shape=torch.Size([self.num_agent])).double()  # torch.Size([1, 4])
 
         return state
@@ -633,7 +629,7 @@ class Circuit(DynamicsConfig):
         :return: the solution
         """
         Ar = self.A - torch.mm(self.B, K)
-        Sigma_K = self.dlyap(Ar, torch.eye(self.num_state, dtype=torch.float64))
+        Sigma_K = self.dlyap(Ar, self.Sigma)
         return Sigma_K
 
 
