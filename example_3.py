@@ -13,8 +13,6 @@ import datetime
 import os
 import matplotlib.pyplot as plt
 os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
-policy_learning_rate_constant = [1, 1, 1, 1, 1, 1]
-policy_learning_rate_variable = [10, 50, 1e-1, 36, 175, 1e-1]
 
 
 def main():
@@ -42,8 +40,7 @@ def main():
     # 2. Parameters for algorithm
     parser.add_argument('--ite', type=int, default=1)
     parser.add_argument('--num_iteration', type=int, default=300, help='300')
-    parser.add_argument('--normalized', type=bool, default=False)
-    parser.add_argument('--policy_learning_rate', type=list, default=None)
+    parser.add_argument('--policy_learning_rate', type=list, default=[10, 50, 1e-1, 36, 175, 1e-1])
 
     # 3. Parameters for trainer
     # Parameters for sampler
@@ -69,8 +66,6 @@ def main():
     args['num_observation'] = env.num_observation
     args['num_control'] = env.num_control
 
-    normalized = args['normalized']
-    args['policy_learning_rate'] = policy_learning_rate_constant if normalized else policy_learning_rate_variable
     lr_policy = args['policy_learning_rate']
     scaling_factor = lr_policy[5]
 
