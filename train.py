@@ -42,6 +42,7 @@ class Train:
 
         self.list_method = kwargs['list_method']
         self.max_run = kwargs['max_run']
+        self.num_run = kwargs['num_run']
         self.method_name = kwargs['method_name']
         self.method_color = kwargs['method_color']
         self.num_method = 6
@@ -171,11 +172,50 @@ class Train:
 
         book.save(save_file + 'gradient_norm_{:d}'.format(self.num_iteration) + '.xls')
 
+    def plot(self, save_file, method_id):
+        fig1 = plt.figure(10 + 2 * method_id, figsize=self.figure_size)
+        ax11 = fig1.add_subplot(111)
+        for r in range(self.num_run[method_id]):
+            plt.plot(self.policy_index, self.policy_accuracy[method_id, r, :], linewidth=0.8)
+        # coordinate
+        plt.xlim((0, self.num_iteration))
+        plt.gca().set_yscale('log')
+        plt.tick_params(axis='both', labelsize=size_label)
+        labels = ax11.get_xticklabels() + ax11.get_yticklabels()
+        [label.set_fontname('Times New Roman') for label in labels]
+        # label
+        plt.xlabel('Iteration', font_label)
+        plt.ylabel('Relative Cost Error', font_label)
+        # save
+        plt.savefig(save_file + 'policy_error_method_{:d}'.format(method_id) + '.svg',
+                    format='svg', dpi=size_dpi, bbox_inches='tight')
+        plt.savefig(save_file + 'policy_error_method_{:d}'.format(method_id) + '.png',
+                    format='png', dpi=size_dpi, bbox_inches='tight')
+
+        fig2 = plt.figure(11 + 2 * method_id, figsize=self.figure_size)
+        ax21 = fig2.add_subplot(111)
+        for r in range(self.num_run[method_id]):
+            plt.plot(self.policy_index, self.cost_accuracy[method_id, r, :], linewidth=0.8)
+        # coordinate
+        plt.xlim((0, self.num_iteration))
+        plt.gca().set_yscale('log')
+        plt.tick_params(axis='both', labelsize=size_label)
+        labels = ax21.get_xticklabels() + ax21.get_yticklabels()
+        [label.set_fontname('Times New Roman') for label in labels]
+        # label
+        plt.xlabel('Iteration', font_label)
+        plt.ylabel('Relative Cost Error', font_label)
+        # save
+        plt.savefig(save_file + 'cost_error_method_{:d}'.format(method_id) + '.svg',
+                    format='svg', dpi=size_dpi, bbox_inches='tight')
+        plt.savefig(save_file + 'cost_error_method_{:d}'.format(method_id) + '.png',
+                    format='png', dpi=size_dpi, bbox_inches='tight')
+
     def plot_policy(self, save_file, ylim, loc):
         fig1 = plt.figure(1, figsize=self.figure_size)
         ax11 = fig1.add_subplot(111)
         for m in self.list_method:
-            if m in [3, 4]:
+            if self.num_run[m] > 1:
                 plt.fill_between(self.policy_index[:, 0].tolist(),
                                  np.min(self.policy_accuracy[m, :, :], 0).tolist(),
                                  np.max(self.policy_accuracy[m, :, :], 0).tolist(),
@@ -209,7 +249,7 @@ class Train:
         fig2 = plt.figure(2, figsize=self.figure_size)
         ax21 = fig2.add_subplot(111)
         for m in self.list_method:
-            if m in [3, 4]:
+            if self.num_run[m] > 1:
                 plt.fill_between(self.policy_index[:, 0].tolist(),
                                  np.min(self.cost_accuracy[m, :, :], 0).tolist(),
                                  np.max(self.cost_accuracy[m, :, :], 0).tolist(),
@@ -244,7 +284,7 @@ class Train:
         ax31 = fig3.add_subplot(111)
         index = np.arange(int(self.num_iteration / self.num_record))
         for m in self.list_method:
-            if m in [3, 4]:
+            if self.num_run[m] > 1:
                 plt.fill_between(index.tolist(),
                                  np.min(self.gradient_norm[m, :, :], 0).tolist(),
                                  np.max(self.gradient_norm[m, :, :], 0).tolist(),
