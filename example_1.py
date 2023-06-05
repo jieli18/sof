@@ -43,8 +43,6 @@ def main():
     parser.add_argument('--ite', type=int, default=1)
     parser.add_argument('--num_iteration', type=int, default=100, help='100')
     parser.add_argument('--normalized', type=bool, default=False)
-    parser.add_argument('--power_schedule_normalized', type=bool, default=False)
-    parser.add_argument('--norm_gradient_constant', type=float, default=2e-1)
     parser.add_argument('--policy_learning_rate', type=list, default=None)
 
     # 3. Parameters for trainer
@@ -72,17 +70,12 @@ def main():
     args['num_control'] = env.num_control
 
     normalized = args['normalized']
-    power_schedule_normalized = args['power_schedule_normalized']
-
     args['policy_learning_rate'] = policy_learning_rate_constant if normalized else policy_learning_rate_variable
     lr_policy = args['policy_learning_rate']
     scaling_factor = lr_policy[5]
 
-    def scalar_gradient(scale):
-        return scale if normalized else 1
-    
-    def norm_gradient(step):
-        return 3 * step ** -0.978 if power_schedule_normalized else args['norm_gradient_constant']
+    def clip_gradient(norm_gradient):
+        return 5.0 / norm_gradient if norm_gradient > 5.0 else 1.0
 
     opt_policy = env.opt_policy  # F^*
     norm_opt_policy = torch.norm(opt_policy)  # || F^* ||_Fro
@@ -122,32 +115,32 @@ def main():
                     Delta_J_K = train.gradient_descent(policy)
                     norm_Delta_J_K = torch.norm(Delta_J_K)
                     train.gradient_norm[m, r, i] = norm_Delta_J_K
-                    policy = policy - lr_policy[m] * Delta_J_K * scalar_gradient(norm_gradient(i+1) / norm_Delta_J_K)
+                    policy = policy - lr_policy[m] * Delta_J_K * clip_gradient(norm_Delta_J_K)
                 elif args['method_name'][m] == 'Natural Gradient':
                     Delta_NA = train.natural_policy_gradient(policy)
                     norm_Delta_NA = torch.norm(Delta_NA)
                     train.gradient_norm[m, r, i] = norm_Delta_NA
-                    policy = policy - lr_policy[m] * Delta_NA * scalar_gradient(norm_gradient(i+1) / norm_Delta_NA)
+                    policy = policy - lr_policy[m] * Delta_NA * clip_gradient(norm_Delta_NA)
                 elif args['method_name'][m] == 'Gauss-Newton':
                     Delta_GN = train.gauss_newton_policy_gradient(policy)
                     norm_Delta_GN = torch.norm(Delta_GN)
                     train.gradient_norm[m, r, i] = norm_Delta_GN
-                    policy = policy - lr_policy[m] * Delta_GN * scalar_gradient(norm_gradient(i+1) / norm_Delta_GN)
+                    policy = policy - lr_policy[m] * Delta_GN * clip_gradient(norm_Delta_GN)
                 elif args['method_name'][m] == 'Model-free Vanilla':
                     estimated_Delta_J_K = train.estimated_gradient_descent(policy)
                     norm_estimated_Delta_J_K = torch.norm(estimated_Delta_J_K)
                     train.gradient_norm[m, r, i] = norm_estimated_Delta_J_K
-                    policy = policy - lr_policy[m] * estimated_Delta_J_K * scalar_gradient(norm_gradient(i+1) / norm_estimated_Delta_J_K)
+                    policy = policy - lr_policy[m] * estimated_Delta_J_K * clip_gradient(norm_estimated_Delta_J_K)
                 elif args['method_name'][m] == 'Model-free Natural':
                     estimated_Delta_NA = train.estimated_natural_policy_gradient(policy)
                     norm_estimated_Delta_NA = torch.norm(estimated_Delta_NA)
                     train.gradient_norm[m, r, i] = norm_estimated_Delta_NA
-                    policy = policy - lr_policy[m] * estimated_Delta_NA * scalar_gradient(norm_gradient(i+1) / norm_estimated_Delta_NA)
+                    policy = policy - lr_policy[m] * estimated_Delta_NA * clip_gradient(norm_estimated_Delta_NA)
                 elif args['method_name'][m] == 'method in [46]':
                     E = train.equivalent_of_lqr(Ki)
                     norm_E = torch.norm(E)
                     train.gradient_norm[m, r, i] = norm_E
-                    Ki = Ki + scaling_factor * E * scalar_gradient(norm_gradient(i+1) / norm_E)
+                    Ki = Ki + scaling_factor * E * clip_gradient(norm_E)
                     policy = torch.mm(Ki, env.C_pseudo_inv)
                 else:
                     print('method name error!')
@@ -192,6 +185,9 @@ def main():
     fig1 = train.plot_policy(save_file, ylim=(0.9e-11, 5e0), loc='lower left')
     fig2 = train.plot_cost(save_file, ylim=(0.9e-11, 5e0), loc='upper right')
     fig3 = train.plot_gradient_norm(save_file, ylim=(0.7e-5, 2e0), loc='upper right')
+    for method_id in range(len(args['list_method'])):
+        if args['num_run'][method_id] > 1:
+            train.plot(save_file, method_id)
     plt.show()
 
     writer.add_figure('policy error', fig1, close=False)
