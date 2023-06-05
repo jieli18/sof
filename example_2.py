@@ -37,8 +37,7 @@ def main():
     parser.add_argument('--num_state', type=int, default=2, help='')
     parser.add_argument('--num_observation', type=int, default=1, help='')
     parser.add_argument('--num_control', type=int, default=1, help='')
-    parser.add_argument('--opt_policy', type=torch.tensor, default=None)
-    parser.add_argument('--init_policy', type=torch.tensor, default=None)
+    parser.add_argument('--random_init_policy', type=bool, default=False)
 
     # 2. Parameters for algorithm
     parser.add_argument('--ite', type=int, default=1)
@@ -65,13 +64,12 @@ def main():
     DynamicsConfig.num_policy = args['num_policy']
     DynamicsConfig.num_step = args['num_step']
     DynamicsConfig.norm_policy_noise = args['norm_policy_noise']
+    DynamicsConfig.random_init_policy = args['random_init_policy']
 
     env = Doyle()
     args['num_state'] = env.num_state
     args['num_observation'] = env.num_observation
     args['num_control'] = env.num_control
-    args['opt_policy'] = env.opt_policy.numpy()
-    args['init_policy'] = env.init_policy.numpy()
 
     normalized = args['normalized']
     power_schedule_normalized = args['power_schedule_normalized']
@@ -86,14 +84,10 @@ def main():
     def norm_gradient(step):
         return 3 * step ** -0.978 if power_schedule_normalized else args['norm_gradient_constant']
 
-    Ki = env.K0  # K = F * C, u = - F * y = - F * C * x = - K * x
-
     opt_policy = env.opt_policy  # F^*
-    init_policy = env.init_policy  # F_0
-    norm_opt_policy = torch.norm(opt_policy)  # || F_0 - F^* ||_Fro
+    norm_opt_policy = torch.norm(opt_policy)  # || F^* ||_Fro
 
     opt_cost = env.obj_func(torch.mm(opt_policy, env.C))  # J(K^*) = J(F^* * C)
-    init_cost = env.obj_func(Ki)  # J(K_0) = J(F_0 * C)
     norm_opt_cost = torch.abs(opt_cost)  # | J(K_0) - J(K^*) | = | J(F_0 * C) - J(F^* * C) |
 
     train = Train(env, **args)
@@ -109,7 +103,9 @@ def main():
         for r in range(args['num_run'][m]):
             args['ite'] = 1
             train.policy_index[0] = 0
-            policy = env.init_policy
+            policy = env.init_policy()
+            Ki = torch.mm(policy, env.C)  # K = F * C, u = - F * y = - F * C * x = - K * x
+            init_cost = env.obj_func(Ki)  # J(K_0) = J(F_0 * C)
             cost = init_cost  # J(K_i) = J(F_i * C)
 
             train.policy_history[m, r, 0, :, :] = policy  # F_i

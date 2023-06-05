@@ -50,7 +50,6 @@ class Train:
         self.num_state = self.env.num_state
         self.num_observation = self.env.num_observation
         self.num_control = self.env.num_control
-        self.opt_policy = self.env.opt_policy
 
         self.num_iteration = kwargs['num_iteration']
 
