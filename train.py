@@ -185,7 +185,7 @@ class Train:
         [label.set_fontname('Times New Roman') for label in labels]
         # label
         plt.xlabel('Iteration', font_label)
-        plt.ylabel('Relative Cost Error', font_label)
+        plt.ylabel('Relative Policy Error', font_label)
         # save
         plt.savefig(save_file + 'policy_error_method_{:d}'.format(method_id) + '.svg',
                     format='svg', dpi=size_dpi, bbox_inches='tight')
