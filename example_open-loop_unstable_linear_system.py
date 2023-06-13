@@ -23,7 +23,7 @@ def main():
     parser.add_argument('--list_method', type=list, default=[0, 1, 2, 3, 4], help='6')
     parser.add_argument('--max_run', type=int, default=10, help='10')
     parser.add_argument('--num_run', type=list,
-                        default=[1, 1, 1, parser.parse_args().max_run, parser.parse_args().max_run, 1])
+                        default=[10, 10, 10, parser.parse_args().max_run, parser.parse_args().max_run, 1])
     parser.add_argument('--method_name', type=dict,
                         default={0: 'Vanilla Gradient', 1: 'Natural Gradient', 2: 'Gauss-Newton',
                                  3: 'Model-free Vanilla', 4: 'Model-free Natural', 5: 'method in [46]'})
@@ -35,7 +35,7 @@ def main():
     parser.add_argument('--num_state', type=int, default=2, help='')
     parser.add_argument('--num_observation', type=int, default=1, help='')
     parser.add_argument('--num_control', type=int, default=1, help='')
-    parser.add_argument('--random_init_policy', type=bool, default=False)
+    parser.add_argument('--random_init_policy', type=bool, default=True)
 
     # 2. Parameters for algorithm
     parser.add_argument('--ite', type=int, default=1)
@@ -91,7 +91,8 @@ def main():
         for r in range(args['num_run'][m]):
             args['ite'] = 1
             train.policy_index[0] = 0
-            policy = env.init_policy()
+            policy = env.init_policy(r)
+            print(f"method{m}: {args['method_name'][m]}, run: {r}, policy: {policy}")
             Ki = torch.mm(policy, env.C)  # K = F * C, u = - F * y = - F * C * x = - K * x
             init_cost = env.obj_func(Ki)  # J(K_0) = J(F_0 * C)
             cost = init_cost  # J(K_i) = J(F_i * C)
